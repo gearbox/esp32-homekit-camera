@@ -81,11 +81,7 @@ class Fixture(object):
     def _skip_case(self, case, depend):
         for name, meth in inspect.getmembers(case):
             if name[:5] == "test_":
-                setattr(
-                    case,
-                    name,
-                    _skipped("failed dependency: case %s" % depend)(meth)
-                )
+                setattr(case, name, _skipped(f"failed dependency: case {depend}")(meth))
 
     def _run_case(self, case, results):
         if case.__name__ in results:
@@ -163,7 +159,7 @@ class Fixture(object):
 
                 rev = self.scm.current_rev()
 
-                self.datastore = os.path.join(".digress_%s" % self.__class__.__name__, rev)
+                self.datastore = os.path.join(f".digress_{self.__class__.__name__}", rev)
 
                 if os.path.isdir(self.datastore):
                     if self.flush_before:
@@ -174,7 +170,7 @@ class Fixture(object):
                 rev = "(dirty working tree)"
                 self.datastore = None
 
-            print "Running fixture %s on revision %s...\n" % (self.__class__.__name__, rev)
+            dirty = self.scm.dirty()
 
             results = {}
 
@@ -195,10 +191,7 @@ class Fixture(object):
                 CASE_FAIL in [ result["status"] for result in results.values() ]
             ) and FIXTURE_FAIL or FIXTURE_PASS
 
-            print "Fixture %s in %.4f.\n" % (
-                (overall_status == FIXTURE_PASS) and "passed" or "failed",
-                total_time
-            )
+            dirty = self.scm.dirty()
 
             return { "cases" : results, "time" : total_time, "status" : overall_status, "revision" : rev }
 
@@ -459,9 +452,9 @@ class Case(object):
     fixture = None
 
     def _get_test_by_name(self, test_name):
-        if not hasattr(self, "test_%s" % test_name):
+        if not hasattr(self, f"test_{test_name}"):
             raise NoSuchTestError(test_name)
-        return getattr(self, "test_%s" % test_name)
+        return getattr(self, f"test_{test_name}")
 
     def _run_test(self, test, results):
         test_name = test.__name__[5:]
